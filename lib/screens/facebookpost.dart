@@ -16,10 +16,16 @@ class _FacebookPostState extends State<FacebookPost> {
   File? _imageFile;
   Uint8List? _webImageBytes;
 
+  String _caption = "";
+  String _hashtag = "";
+
+  // ✅ New: Text controllers for user input
+  final TextEditingController _captionController = TextEditingController();
+  final TextEditingController _hashtagController = TextEditingController();
+
   Future<void> _pickImage() async {
     try {
       if (kIsWeb) {
-        print("Opening file picker on Web...");
         final result = await FilePicker.platform.pickFiles(
           type: FileType.image,
           withData: true,
@@ -27,22 +33,18 @@ class _FacebookPostState extends State<FacebookPost> {
         if (result != null && result.files.single.bytes != null) {
           setState(() {
             _webImageBytes = result.files.single.bytes;
+            _caption = _captionController.text.trim();
+            _hashtag = _hashtagController.text.trim();
           });
-          print("Image selected on Web");
-        } else {
-          print("No image selected (Web).");
         }
       } else {
-        print("Opening image picker on Mobile...");
-        final pickedFile =
-            await ImagePicker().pickImage(source: ImageSource.gallery);
+        final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
         if (pickedFile != null) {
           setState(() {
             _imageFile = File(pickedFile.path);
+            _caption = _captionController.text.trim();
+            _hashtag = _hashtagController.text.trim();
           });
-          print("Image selected on Mobile: ${pickedFile.path}");
-        } else {
-          print("No image selected (Mobile).");
         }
       }
     } catch (e) {
@@ -52,31 +54,52 @@ class _FacebookPostState extends State<FacebookPost> {
 
   Widget _getPostImageWidget() {
     if (kIsWeb && _webImageBytes != null) {
-      return Image.memory(_webImageBytes!,
-          width: double.infinity, height: 450, fit: BoxFit.cover);
+      return Image.memory(_webImageBytes!, width: double.infinity, height: 450, fit: BoxFit.cover);
     } else if (!kIsWeb && _imageFile != null) {
-      return Image.file(_imageFile!,
-          width: double.infinity, height: 450, fit: BoxFit.cover);
+      return Image.file(_imageFile!, width: double.infinity, height: 450, fit: BoxFit.cover);
     } else {
-      return Image.asset('assets/images/Post.jpg',
-          width: double.infinity, height: 450, fit: BoxFit.cover);
+      return Image.asset('assets/images/Post.jpg', width: double.infinity, height: 450, fit: BoxFit.cover);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          const SizedBox(height: 10),
-          ElevatedButton.icon(
-            onPressed: _pickImage,
-            icon: const Icon(Icons.upload),
-            label: const Text("Upload Post Image"),
-          ),
-          const SizedBox(height: 10),
-          _buildFacebookPost(),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            // ✅ TextField for caption
+            TextField(
+              controller: _captionController,
+              decoration: const InputDecoration(
+                labelText: "Caption",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // ✅ TextField for hashtag
+            TextField(
+              controller: _hashtagController,
+              decoration: const InputDecoration(
+                labelText: "Hashtag",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // ✅ Upload Button
+            ElevatedButton.icon(
+              onPressed: _pickImage,
+              icon: const Icon(Icons.upload),
+              label: const Text("Upload Post Image"),
+            ),
+
+            const SizedBox(height: 20),
+            _buildFacebookPost(),
+          ],
+        ),
       ),
     );
   }
@@ -90,25 +113,28 @@ class _FacebookPostState extends State<FacebookPost> {
             backgroundImage: AssetImage('assets/images/Zambrona.jpg'),
             radius: 20,
           ),
-          title: Text("Raph Kenneth Zambrona",
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          title: Text("Raph Kenneth Zambrona", style: TextStyle(fontWeight: FontWeight.bold)),
           subtitle: Text("July 02, 2025", style: TextStyle(fontSize: 12)),
           trailing: Icon(Icons.more_horiz),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 20.0),
-          child: Text(
-              "If you want to live a happy life, tie it to a goal, not to people or things."),
-        ),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-          child: Text("#Peace&Future", style: TextStyle(color: Colors.blue)),
-        ),
+
+        // ✅ Dynamic caption and hashtag
+        if (_caption.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 20.0),
+            child: Text(_caption),
+          ),
+        if (_hashtag.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+            child: Text(_hashtag, style: const TextStyle(color: Colors.blue)),
+          ),
+
         Padding(
-          padding:
-              const EdgeInsets.symmetric(vertical: 5.0, horizontal: 20.0),
+          padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 20.0),
           child: _getPostImageWidget(),
         ),
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Row(
@@ -117,10 +143,8 @@ class _FacebookPostState extends State<FacebookPost> {
               Row(
                 children: const [
                   Icon(Icons.favorite, color: Colors.red, size: 18),
-                  Icon(Icons.thumb_up,
-                      color: Color.fromARGB(255, 57, 54, 244), size: 18),
-                  Icon(Icons.emoji_emotions_sharp,
-                      color: Color.fromARGB(255, 231, 218, 32), size: 18),
+                  Icon(Icons.thumb_up, color: Color.fromARGB(255, 57, 54, 244), size: 18),
+                  Icon(Icons.emoji_emotions_sharp, color: Color.fromARGB(255, 231, 218, 32), size: 18),
                   SizedBox(width: 5),
                   Text("1,000"),
                 ],
@@ -146,8 +170,7 @@ class _FacebookPostState extends State<FacebookPost> {
           child: Divider(thickness: 0.3, color: Colors.grey.shade400),
         ),
         Padding(
-          padding:
-              const EdgeInsets.symmetric(vertical: 5.0, horizontal: 25.0),
+          padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 25.0),
           child: Row(
             children: [
               const CircleAvatar(
