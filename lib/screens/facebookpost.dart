@@ -1,0 +1,196 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+
+class FacebookPost extends StatefulWidget {
+  const FacebookPost({super.key});
+
+  @override
+  State<FacebookPost> createState() => _FacebookPostState();
+}
+
+class _FacebookPostState extends State<FacebookPost> {
+  File? _imageFile;
+  Uint8List? _webImageBytes;
+
+  Future<void> _pickImage() async {
+    try {
+      if (kIsWeb) {
+        print("Opening file picker on Web...");
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          withData: true,
+        );
+        if (result != null && result.files.single.bytes != null) {
+          setState(() {
+            _webImageBytes = result.files.single.bytes;
+          });
+          print("Image selected on Web");
+        } else {
+          print("No image selected (Web).");
+        }
+      } else {
+        print("Opening image picker on Mobile...");
+        final pickedFile =
+            await ImagePicker().pickImage(source: ImageSource.gallery);
+        if (pickedFile != null) {
+          setState(() {
+            _imageFile = File(pickedFile.path);
+          });
+          print("Image selected on Mobile: ${pickedFile.path}");
+        } else {
+          print("No image selected (Mobile).");
+        }
+      }
+    } catch (e) {
+      print("Error picking image: $e");
+    }
+  }
+
+  Widget _getPostImageWidget() {
+    if (kIsWeb && _webImageBytes != null) {
+      return Image.memory(_webImageBytes!,
+          width: double.infinity, height: 450, fit: BoxFit.cover);
+    } else if (!kIsWeb && _imageFile != null) {
+      return Image.file(_imageFile!,
+          width: double.infinity, height: 450, fit: BoxFit.cover);
+    } else {
+      return Image.asset('assets/images/Post.jpg',
+          width: double.infinity, height: 450, fit: BoxFit.cover);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 10),
+          ElevatedButton.icon(
+            onPressed: _pickImage,
+            icon: const Icon(Icons.upload),
+            label: const Text("Upload Post Image"),
+          ),
+          const SizedBox(height: 10),
+          _buildFacebookPost(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFacebookPost() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const ListTile(
+          leading: CircleAvatar(
+            backgroundImage: AssetImage('assets/images/Zambrona.jpg'),
+            radius: 20,
+          ),
+          title: Text("Raph Kenneth Zambrona",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text("July 02, 2025", style: TextStyle(fontSize: 12)),
+          trailing: Icon(Icons.more_horiz),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 20.0),
+          child: Text(
+              "If you want to live a happy life, tie it to a goal, not to people or things."),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+          child: Text("#Peace&Future", style: TextStyle(color: Colors.blue)),
+        ),
+        Padding(
+          padding:
+              const EdgeInsets.symmetric(vertical: 5.0, horizontal: 20.0),
+          child: _getPostImageWidget(),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.favorite, color: Colors.red, size: 18),
+                  Icon(Icons.thumb_up,
+                      color: Color.fromARGB(255, 57, 54, 244), size: 18),
+                  Icon(Icons.emoji_emotions_sharp,
+                      color: Color.fromARGB(255, 231, 218, 32), size: 18),
+                  SizedBox(width: 5),
+                  Text("1,000"),
+                ],
+              ),
+              const Text("27 Comments  12 Shares"),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Divider(thickness: 0.3, color: Colors.grey.shade400),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildButton(Icons.thumb_up_alt_outlined, " Like"),
+            _buildButton(Icons.mode_comment_outlined, " Comment"),
+            _buildButton(Icons.share_outlined, " Share"),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Divider(thickness: 0.3, color: Colors.grey.shade400),
+        ),
+        Padding(
+          padding:
+              const EdgeInsets.symmetric(vertical: 5.0, horizontal: 25.0),
+          child: Row(
+            children: [
+              const CircleAvatar(
+                backgroundColor: Colors.black,
+                child: ClipOval(
+                  child: Image(
+                    image: AssetImage('assets/images/Zambrona.jpg'),
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: SizedBox(
+                  height: 35,
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: " Write a comment...",
+                      hintStyle: const TextStyle(fontSize: 13),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildButton(IconData icon, String label) {
+    return TextButton.icon(
+      onPressed: () {},
+      icon: Icon(icon, color: Colors.grey[700]),
+      label: Text(label, style: TextStyle(color: Colors.grey[700])),
+    );
+  }
+}
